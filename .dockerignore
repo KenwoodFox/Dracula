@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# Don't ignore...
+!bacubot/
+!resources/
+!bin/
+!setup.py
+!README.md
+!LICENSE
+
+# Testing
+!tests/

@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+  bacubot:
+    image: bacubot:$TAG
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      BOT_TOKEN: ""
+    restart: "yes"
+    command: "true"
