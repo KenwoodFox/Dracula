@@ -2,7 +2,8 @@
 *
 
 # Don't ignore...
-!fops_bot/
+!dracula/
+!templates/
 !requirements/
 !resources/
 !bin/

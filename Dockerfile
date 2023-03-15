@@ -17,19 +17,20 @@ ENV GIT_COMMIT=$GIT_COMMIT
 ARG HOME="/app"
 ENV HOME=${HOME}
 
+# Set workdir
+WORKDIR ${HOME}
+
 # Upgrade pip
 RUN pip install --upgrade pip --no-cache-dir
 
-# Set workdir
-WORKDIR ${HOME}
+# Install and configure bconsole
+RUN apt update && apt install bacula-console -y
 
 # Copy in all requirements
 ADD requirements requirements/
 
 # Install normal reqs
 RUN pip install -r requirements/requirements.txt --no-cache-dir
-# Install testing reqs
-RUN pip install -r requirements/test_requirements.txt --no-cache-dir
 
 # Copy in everything else
 ADD . ${HOME}
