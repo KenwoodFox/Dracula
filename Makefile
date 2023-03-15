@@ -34,7 +34,7 @@ lint:
 
 # Run the tests
 test: build
-	docker-compose run bacubot test
+	docker-compose run dracula test
 
 # Install requirements (locally)
 install-requirements:
@@ -55,11 +55,11 @@ docker-rm: stop
 
 # Get container shell
 shell:
-	docker-compose run --entrypoint "/bin/bash" bacubot
+	docker-compose run --entrypoint "/bin/bash" dracula
 
 # Run command in container
 run: build
-	docker-compose run bacubot $(COMMAND)
+	docker-compose run dracula $(COMMAND)
 
 # Stop container
 stop:
@@ -72,4 +72,4 @@ prod:
 
 # Development stuff
 dev:
-	docker-compose -f docker-compose.yml build && docker-compose -f docker-compose.yml up
+	docker-compose -f docker-compose-prod.yml up

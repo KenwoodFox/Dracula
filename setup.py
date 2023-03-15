@@ -5,16 +5,16 @@ from setuptools import setup, find_packages
 readme = open("README.md").read()
 
 setup(
-    name="bacubot",
-    description="A bacula to discord connector",
-    author="Kitsune Scientific",
+    name="dracula",
+    description="todo",
+    author="Joe",
     author_email="31870999+KenwoodFox@users.noreply.github.com",
-    url="https://github.com/Kitsune-Scientific/bacubot",
-    packages=find_packages(include=["bacubot"]),
-    package_dir={"bacubot": "bacubot"},
+    url="https://github.com/KenwoodFox/dracula",
+    packages=find_packages(include=["dracula"]),
+    package_dir={"dracula": "dracula"},
     entry_points={
         "console_scripts": [
-            "bacubot=bacubot.__main__:main",
+            "dracula=dracula.__main__:main",
         ],
     },
     python_requires=">=3.10.0",

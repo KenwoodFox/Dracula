@@ -1,11 +1,12 @@
 # See here https://hub.docker.com/r/gorialis/discord.py/
-FROM gorialis/discord.py
+#FROM gorialis/discord.py
+FROM python:3.10-slim
 
 # Authors
 LABEL authors="31870999+KenwoodFox@users.noreply.github.com"
 
 # Set the name of our app
-ARG APP_NAME=bacubot
+ARG APP_NAME=dracula
 ENV APP_NAME=${APP_NAME}
 
 # Get the current git version
@@ -17,29 +18,26 @@ ARG HOME="/app"
 ENV HOME=${HOME}
 
 # Upgrade pip
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip --no-cache-dir
 
 # Set workdir
 WORKDIR ${HOME}
 
 # Copy in all requirements
-ADD bacubot/requirements.txt .
+ADD requirements requirements/
 
 # Install normal reqs
-RUN pip install -r requirements.txt
+RUN pip install -r requirements/requirements.txt --no-cache-dir
+# Install testing reqs
+RUN pip install -r requirements/test_requirements.txt --no-cache-dir
 
 # Copy in everything else
 ADD . ${HOME}
 # Add /bin to path
 ENV PATH $PATH:${HOME}/bin
 
-# Install bconsole
-RUN apt update && \
-    apt install -y bacula-console
-ADD resources/bconsole.conf /etc/bacula/bconsole.conf
-
 # Install our app in edit mode using pip
-RUN pip install -e ${HOME}
+RUN pip install -e ${HOME} --no-cache-dir
 
 # Drop root and change ownership of /app to app:app
 RUN chown -R ${USER_ID}:${GROUP_ID} ${HOME}

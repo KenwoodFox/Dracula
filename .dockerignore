@@ -2,7 +2,8 @@
 *
 
 # Don't ignore...
-!bacubot/
+!fops_bot/
+!requirements/
 !resources/
 !bin/
 !setup.py

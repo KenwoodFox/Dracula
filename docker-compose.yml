@@ -1,12 +1,15 @@
 version: '3.7'
 
 services:
-  bacubot:
-    image: bacubot:$TAG
+  dracula:
+    image: dracula:$TAG
     build:
       context: .
       dockerfile: Dockerfile
     environment:
-      BOT_TOKEN: ""
-    restart: "yes"
+      BOT_TOKEN: "top.secret.token"
+      NAME: Bacula-Dir
+      ADDRESS: Ba.cu.la.dr
+      PASSWORD: "Top Secret Password"
+    restart: "no"
     command: "true"
