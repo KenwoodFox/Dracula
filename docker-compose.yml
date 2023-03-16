@@ -8,8 +8,11 @@ services:
       dockerfile: Dockerfile
     environment:
       BOT_TOKEN: "top.secret.token"
+      CHANNEL: "000000000000000000"
+      ALERT_USER: "000000000000000000"
+      DIRPORT: 9101
       NAME: Bacula-Dir
-      ADDRESS: Ba.cu.la.dr
+      ADDRESS: "Ba.cu.la.dr"
       PASSWORD: "Top Secret Password"
-    restart: "no"
+    restart: "always"
     command: "true"
