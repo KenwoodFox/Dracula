@@ -5,6 +5,7 @@
 
 import discord
 import logging
+import os
 import subprocess
 
 
@@ -20,12 +21,15 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         # Run the initalization script for bconsole
         subprocess.run("cd templates && ./inject.sh", shell=True)
 
-    @app_commands.command(name="b")
-    async def b(self, ctx: discord.Interaction, cmd: str):
-        """
-        Runs a bacula command.
-        """
+        # Setup "static" channels
+        chanid = int(os.environ.get("CHANNEL"))
+        self.alertUser = int(os.environ.get("ALERT_USER"))
+        self.alertChan = self.bot.get_channel(chanid)
 
+        # Setup tasks
+        self.upcoming_events.start()
+
+    def bconsoleCommand(self, cmd: str):
         out = subprocess.Popen(
             [
                 f"echo {cmd} | bconsole"
@@ -42,7 +46,30 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             "utf-8"
         )  # Trim the messages by removing timestamp and connection info
 
-        await ctx.response.send_message(f"```{cleaned_stdout}```")
+        return cleaned_stdout
+
+    @tasks.loop(seconds=20)
+    async def upcoming_events(self):
+        messages = self.bconsoleCommand("messages")
+
+        if not "You have no messages." in messages:
+            logging.debug(f"Reporting on {messages}.")
+            if "Please mount" in messages:
+                await self.alertChan.send(f"<@{self.alertUser}\n```{messages}```>")
+            else:
+                await self.alertChan.send(f"```{messages}```")
+        else:
+            logging.debug("No messages to report.")
+
+    @app_commands.command(name="bcmd")
+    async def bcmd(self, ctx: discord.Interaction, cmd: str):
+        """
+        Runs a bacula command.
+        """
+
+        await ctx.response.send_message(
+            f"Running command {cmd}\n```{self.bconsoleCommand(cmd)}```"
+        )
 
 
 async def setup(bot):
