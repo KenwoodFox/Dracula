@@ -14,5 +14,5 @@ services:
       NAME: Bacula-Dir
       ADDRESS: "Ba.cu.la.dr"
       PASSWORD: "Top Secret Password"
-    restart: "always"
+    restart: "no"
     command: "true"

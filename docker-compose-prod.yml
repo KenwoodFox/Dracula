@@ -4,6 +4,12 @@ services:
   dracula:
     image: ghcr.io/kenwoodfox/dracula:main
     environment:
-      BOT_TOKEN: "secret.token.here"
+      BOT_TOKEN: "top.secret.token"
+      CHANNEL: "000000000000000000"
+      ALERT_USER: "000000000000000000"
+      DIRPORT: 9101
+      NAME: Bacula-Dir
+      ADDRESS: "Ba.cu.la.dr"
+      PASSWORD: "Top Secret Password"
     restart: "always"
     command: "true"
