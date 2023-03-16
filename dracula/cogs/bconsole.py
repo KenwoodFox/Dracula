@@ -62,6 +62,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             logging.debug("No messages to report.")
 
     @app_commands.command(name="bcmd")
+    @commands.has_role("SYSADMIN")
     async def bcmd(self, ctx: discord.Interaction, cmd: str):
         """
         Runs a bacula command.
@@ -75,7 +76,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             for i in range(0, len(raw), maxCharPerMessage)
         ]
 
-        await ctx.response.send_message(f"Running command {cmd}\n```{output[0]}```")
+        await ctx.response.send_message(f"Running command `{cmd}`\n```{output[0]}```")
 
         if len(output) > 1:
             for part in output[1:]:
