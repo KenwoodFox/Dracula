@@ -67,9 +67,19 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         Runs a bacula command.
         """
 
-        await ctx.response.send_message(
-            f"Running command {cmd}\n```{self.bconsoleCommand(cmd)}```"
-        )
+        maxCharPerMessage = 1900
+        raw = self.bconsoleCommand(cmd)
+
+        output = [
+            raw[i : i + maxCharPerMessage]
+            for i in range(0, len(raw), maxCharPerMessage)
+        ]
+
+        await ctx.response.send_message(f"Running command {cmd}\n```{output[0]}```")
+
+        if len(output) > 1:
+            for part in output[1:]:
+                await self.alertChan.send(f"```{part}```")
 
 
 async def setup(bot):
