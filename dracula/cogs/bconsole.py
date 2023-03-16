@@ -55,7 +55,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         if not "You have no messages." in messages:
             logging.debug(f"Reporting on {messages}.")
             if "Please mount" in messages:
-                await self.alertChan.send(f"<@{self.alertUser}\n```{messages}```>")
+                await self.alertChan.send(f"<@{self.alertUser}>\n```{messages}```")
             else:
                 await self.alertChan.send(f"```{messages}```")
         else:
