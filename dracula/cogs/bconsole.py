@@ -50,16 +50,26 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
     @tasks.loop(seconds=20)
     async def upcoming_events(self):
-        messages = self.bconsoleCommand("messages")
+        maxCharPerMessage = 1900
+        raw = self.bconsoleCommand("messages")
 
-        if not "You have no messages." in messages:
-            logging.debug(f"Reporting on {messages}.")
-            if "Please mount" in messages:
-                await self.alertChan.send(f"<@{self.alertUser}>\n```{messages}```")
+        messages = [
+            raw[i : i + maxCharPerMessage]
+            for i in range(0, len(raw), maxCharPerMessage)
+        ]
+
+        if not "You have no messages." in messages[0]:
+            logging.debug(f"Reporting on {messages[0]}.")
+            if "Please mount" in messages[0]:
+                await self.alertChan.send(f"<@{self.alertUser}>\n```{messages[0]}```")
             else:
-                await self.alertChan.send(f"```{messages}```")
+                await self.alertChan.send(f"```{messages[0]}```")
         else:
             logging.debug("No messages to report.")
+
+        if len(messages) > 1:
+            for part in messages[1:]:
+                await self.alertChan.send(f"```{part}```")
 
     @app_commands.command(name="bcmd")
     @commands.has_role("SYSADMIN")
