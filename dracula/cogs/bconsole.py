@@ -84,10 +84,20 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         user = os.environ.get("SSH_USER")
         pwd = os.environ.get("SSH_PASSWORD")
 
+        # First ask bacula to unmount the tape
+        raw = self.bconsoleCommand("unmount")
+        time.sleep(1)  # Wait a second
+        await ctx.followup.send(f"```{raw}```")
+
+        # Connect and eject the tape
         ssh.connect(host, username=user, password=pwd)
-        ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("mt -f /dev/sa0 eject")
+        ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("mt -f /dev/sa0 offline")
         time.sleep(2)
-        await ctx.followup.send("```" + ssh_stdout.read().decode("utf-8") + "```")
+
+        if len(ssh_stdout.read().decode("utf-8")) == 0:
+            await ctx.followup.send("Tape is ejected!")
+        else:
+            await ctx.followup.send("Tape is ejected! (I think)")
 
     @app_commands.command(name="bcmd")
     @commands.has_role("SYSADMIN")
@@ -95,6 +105,8 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         """
         Runs a bacula command.
         """
+
+        await ctx.response.defer()  # We can expect that this command will take a while
 
         maxCharPerMessage = 1900
         raw = self.bconsoleCommand(cmd)
@@ -104,7 +116,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             for i in range(0, len(raw), maxCharPerMessage)
         ]
 
-        await ctx.response.send_message(f"Running command `{cmd}`\n```{output[0]}```")
+        await ctx.followup.send(f"Running command `{cmd}`\n```{output[0]}```")
 
         if len(output) > 1:
             for part in output[1:]:
