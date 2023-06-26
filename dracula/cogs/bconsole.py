@@ -6,7 +6,9 @@
 import discord
 import logging
 import os
+import time
 import subprocess
+import paramiko
 
 
 from typing import Literal, Optional
@@ -70,6 +72,24 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         if len(messages) > 1:
             for part in messages[1:]:
                 await self.alertChan.send(f"```{part}```")
+
+    @app_commands.command(name="eject")
+    @commands.has_role("SYSADMIN")
+    async def eject(self, ctx: discord.Interaction):
+        await ctx.response.defer() # Defer client (dont crash if this takes a while)
+        ssh = paramiko.SSHClient() # Spawn an SSH client
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        host = os.environ.get("ADDRESS")
+        user = os.environ.get("SSH_USER")
+        pwd = os.environ.get("SSH_PASSWORD")
+
+        ssh.connect(host, username=user, password=pwd)
+        ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command("mt -f /dev/sa0 eject")
+        time.sleep(2)
+        await ctx.followup.send("```" + ssh_stdout.read().decode("utf-8") + "```")
+
+        
 
     @app_commands.command(name="bcmd")
     @commands.has_role("SYSADMIN")

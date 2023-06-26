@@ -11,5 +11,7 @@ services:
       NAME: Bacula-Dir
       ADDRESS: "Ba.cu.la.dr"
       PASSWORD: "Top Secret Password"
+      SSH_USER: sshUser
+      SSH_PASSWORD: sshPass
     restart: "always"
     command: "true"
