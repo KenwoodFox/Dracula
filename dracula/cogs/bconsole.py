@@ -29,7 +29,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         self.alertChan = self.bot.get_channel(chanid)
 
         # Setup tasks
-        self.upcoming_events.start()
+        self.check_messages.start()
 
     def bconsoleCommand(self, cmd: str):
         out = subprocess.Popen(
@@ -51,27 +51,32 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         return cleaned_stdout
 
     @tasks.loop(seconds=20)
-    async def upcoming_events(self):
+    async def check_messages(self):
         maxCharPerMessage = 1900
         raw = self.bconsoleCommand("messages")
 
-        messages = [
-            raw[i : i + maxCharPerMessage]
-            for i in range(0, len(raw), maxCharPerMessage)
-        ]
+        lines = raw.split("\n")  # A list containing every line
 
-        if not "You have no messages." in messages[0]:
-            logging.debug(f"Reporting on {messages[0]}.")
-            if "Please mount" in messages[0]:
-                await self.alertChan.send(f"<@{self.alertUser}>\n```{messages[0]}```")
+        # Dont report empty messages
+        if "You have no messages." in lines[0]:
+            return
+
+        content = ""  # The content of a single message we're going to send
+        for line in lines:
+            if len(content) + len(line) < maxCharPerMessage:
+                content += line + "\n"
             else:
-                await self.alertChan.send(f"```{messages[0]}```")
-        else:
-            logging.debug("No messages to report.")
+                if "Please mount" in content:
+                    await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
+                else:
+                    await self.alertChan.send(f"```{content}```")
+                content = ""
 
-        if len(messages) > 1:
-            for part in messages[1:]:
-                await self.alertChan.send(f"```{part}```")
+        if content != "":
+            if "Please mount" in content:
+                await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
+            else:
+                await self.alertChan.send(f"```{content}```")
 
     @app_commands.command(name="eject")
     @commands.has_role("SYSADMIN")
