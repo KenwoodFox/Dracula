@@ -111,16 +111,18 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         maxCharPerMessage = 1900
         raw = self.bconsoleCommand(cmd)
 
-        output = [
-            raw[i : i + maxCharPerMessage]
-            for i in range(0, len(raw), maxCharPerMessage)
-        ]
+        lines = raw.split("\n")  # A list containing every line
 
-        await ctx.followup.send(f"Running command `{cmd}`\n```{output[0]}```")
+        content = f"Running command `{cmd}`\n```"  # The content of a single message we're going to send
+        for line in lines:
+            if len(content) + len(line) < maxCharPerMessage:
+                content += line + "\n"
+            else:
+                await ctx.followup.send(f"{content}```")
+                content = "```"
 
-        if len(output) > 1:
-            for part in output[1:]:
-                await self.alertChan.send(f"```{part}```")
+        if content != "```":
+            await ctx.followup.send(f"{content}```")
 
 
 async def setup(bot):
