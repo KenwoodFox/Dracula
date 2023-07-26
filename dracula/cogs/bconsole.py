@@ -102,17 +102,23 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
                 return
 
             user = await self.bot.fetch_user(userId)
+            term = data["Termination:"]
             bytesWritten = re.search(r"\((.*?)\)", data["SD Bytes Written:"]).group(1)
 
             # Start by crafting an embed
+            if term == "Backup OK":
+                color = 0x76FF26
+            else:
+                color = 0x7A0C1F
+
             embed = discord.Embed(
                 title=data["Job:"],
-                color=0x76FF26,
+                color=color,
             )
 
             embed.add_field(
                 name="Status",
-                value=data["Termination:"],
+                value=term,
                 inline=False,
             )
 
@@ -184,7 +190,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             else:
                 await self.alertChan.send(f"```{content}```")
 
-            if "Backup OK" in content:
+            if "Termination:" in content:
                 # its time to send an alert!
                 try:
                     await self.sendSummary(data)
