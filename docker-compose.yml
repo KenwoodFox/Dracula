@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 
 services:
   dracula:
@@ -16,3 +16,5 @@ services:
       PASSWORD: "Top Secret Password"
     restart: "no"
     command: "true"
+    volumes:
+      - ./.config:/app/config
