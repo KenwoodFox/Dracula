@@ -5,6 +5,7 @@
 
 import discord
 import logging
+import re
 import os
 import time
 import subprocess
@@ -101,8 +102,9 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
                 return
 
             user = await self.bot.fetch_user(userId)
+            bytesWritten = re.search(r"\((.*?)\)", data["SD Bytes Written:"]).group(1)
             await user.send(
-                f"Your most recent backup job `{data['Job:']}` is finished! Wrote `{data['SD Files Written:']}` files and `{data['SD Bytes Written:']}` to tape!"
+                f"Your most recent backup job `{data['Job:']}` is finished! Wrote `{data['SD Files Written:']}` files and `{bytesWritten}` to tape!"
             )
 
     @tasks.loop(seconds=20)
