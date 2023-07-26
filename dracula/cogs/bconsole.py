@@ -112,7 +112,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
         # await self.sendSummary("Backup-Joe", "180", "4mb")
 
-        if False:
+        if True:
             lines = raw.split("\n")  # A list containing every line
         else:
             with open("/app/templates/testData.txt") as f:
