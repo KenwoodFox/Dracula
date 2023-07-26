@@ -84,7 +84,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
     async def sendSummary(self, data):
         if data is None:
-            logging.warn("Not sending summary because no data was sent.")
+            logging.error("Not sending summary because no data was sent.")
             return
 
         userData = self.yamlConf["users"]
@@ -103,9 +103,47 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
             user = await self.bot.fetch_user(userId)
             bytesWritten = re.search(r"\((.*?)\)", data["SD Bytes Written:"]).group(1)
-            await user.send(
-                f"Your most recent backup job `{data['Job:']}` is finished! Wrote `{data['SD Files Written:']}` files and `{bytesWritten}` to tape!"
+
+            # Start by crafting an embed
+            embed = discord.Embed(
+                title=data["Job:"],
+                color=0x76FF26,
             )
+
+            embed.add_field(
+                name="Status",
+                value=data["Termination:"],
+                inline=False,
+            )
+
+            embed.add_field(
+                name="Files Backed Up",
+                value=data["SD Files Written:"],
+                inline=True,
+            )
+
+            embed.add_field(
+                name="Bytes Written",
+                value=bytesWritten,
+                inline=True,
+            )
+
+            embed.add_field(
+                name="Time Consumed",
+                value=data["Elapsed time:"],
+                inline=True,
+            )
+
+            embed.add_field(
+                name="Volumes",
+                value=data["Volume name(s):"],
+                inline=False,
+            )
+
+            embed.set_footer(text=f"Bot Version {self.bot.version}")
+
+            # Send the embed!
+            await user.send(embed=embed)
 
     @tasks.loop(seconds=20)
     async def check_messages(self):
@@ -148,7 +186,10 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
             if "Backup OK" in content:
                 # its time to send an alert!
-                await self.sendSummary(data)
+                try:
+                    await self.sendSummary(data)
+                except:
+                    logging.error("Error sending data!")
 
             content = line + "\n"
 
