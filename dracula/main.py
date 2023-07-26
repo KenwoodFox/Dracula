@@ -4,8 +4,7 @@ import os
 import sys
 import logging
 import random
-import yaml
-import shutil
+
 
 from discord import Intents
 from discord.ext import commands
@@ -35,15 +34,6 @@ class Dracula(object):
         # Append our workdir to the path (for importing modules)
         self.workdir = "/app/dracula/"
         sys.path.append(self.workdir)
-
-        # Setup user config
-        confPath = "/app/config/config.yaml"
-        if not os.path.isfile(confPath):
-            logging.warn("Config not found! Copying default")
-            shutil.copyfile("/app/templates/config.yaml", confPath)
-
-        with open(confPath, "r") as file:
-            self.yamlConf = yaml.safe_load(file)
 
         # Setup logging.
         if self.debug:

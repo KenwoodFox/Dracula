@@ -9,6 +9,8 @@ import os
 import time
 import subprocess
 import paramiko
+import yaml
+import shutil
 
 
 from typing import Literal, Optional
@@ -27,6 +29,15 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         chanid = int(os.environ.get("CHANNEL"))
         self.alertUser = int(os.environ.get("ALERT_USER"))
         self.alertChan = self.bot.get_channel(chanid)
+
+        # Setup user config
+        confPath = "/app/config/config.yaml"
+        if not os.path.isfile(confPath):
+            logging.warn("Config not found! Copying default")
+            shutil.copyfile("/app/templates/config.yaml", confPath)
+
+        with open(confPath, "r") as file:
+            self.yamlConf = yaml.safe_load(file)
 
         # Setup tasks
         self.check_messages.start()
@@ -50,11 +61,49 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
         return cleaned_stdout
 
-    async def sendSummary(self, jobName, files, bytes):
-        user = await self.bot.fetch_user(185206201011798016)
-        await user.send(
-            f"Your most recent backup job `{jobName}` is finished! Wrote `{files}` files and `{bytes}` bytes to tape!"
-        )
+    def extract(self, data):
+        """
+        Extract targets from text!
+        """
+
+        myDict = {}
+
+        for line in data:
+            splitLines = line.split("   ")
+
+            thisLine = []
+            for nugget in splitLines:
+                if nugget != "":
+                    thisLine.append(nugget.lstrip())
+
+            if len(thisLine) >= 2:
+                myDict[thisLine[0]] = thisLine[1]
+
+        return myDict
+
+    async def sendSummary(self, data):
+        if data is None:
+            logging.warn("Not sending summary because no data was sent.")
+            return
+
+        userData = self.yamlConf["users"]
+
+        for user in userData:
+            userId = None
+            jobNames = userData[user]["user-jobs"]
+
+            for jobName in jobNames:
+                if jobName in data["Job:"]:
+                    userId = userData[user]["discord"]
+
+            if userId == None:
+                logging.debug("Not sending summary because userid is not in dict.")
+                return
+
+            user = await self.bot.fetch_user(userId)
+            await user.send(
+                f"Your most recent backup job `{data['Job:']}` is finished! Wrote `{data['SD Files Written:']}` files and `{data['SD Bytes Written:']}` to tape!"
+            )
 
     @tasks.loop(seconds=20)
     async def check_messages(self):
@@ -73,6 +122,12 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         if "You have no messages." in lines[0]:
             return
 
+        # Collect/parse some report data
+        try:
+            data = self.extract(lines)
+        except:
+            data = None
+
         content = ""  # The content of a single message we're going to send
         for idx, line in enumerate(lines):
             # Will adding this line take us over the limit?
@@ -84,14 +139,15 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
                 if idx != len(lines) - 1:
                     continue
 
-            # Check this bit of context for some important data!
-            # if self.extract("Job:", line) is not None:
-            #     jobName = self.extract("Job:", line)
-
             if "Please mount" in content:
                 await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
             else:
                 await self.alertChan.send(f"```{content}```")
+
+            if "Backup OK" in content:
+                # its time to send an alert!
+                await self.sendSummary(data)
+
             content = line + "\n"
 
     @app_commands.command(name="eject")
