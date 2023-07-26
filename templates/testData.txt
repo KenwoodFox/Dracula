@@ -1,0 +1,44 @@
+25-Jul 06:47 bacula-iron-sd JobId 2509: Elapsed time=00:28:02, Transfer rate=11.74 M Bytes/second
+25-Jul 06:47 bacula-iron-sd JobId 2509: Sending spooled attrs to the Director. Despooling 2,338,806 bytes ...
+25-Jul 06:47 bacula-dir JobId 2509: Bacula bacula-dir 13.0.1 (05Aug22):
+  Build OS:               amd64-portbld-freebsd13.1 freebsd 13.1-RELEASE-p7
+  JobId:                  2509
+  Job:                    Backup-Joe.2023-07-25_06.15.01_15
+  Backup Level:           Incremental, since=2023-07-18 06:19:54
+  Client:                 "Zinc-Client" 13.0.1 (05Aug22) amd64-portbld-freebsd13.1,freebsd,13.1-RELEASE-p7
+  FileSet:                "Joe Backup" 2020-06-07 02:15:00
+  Pool:                   "Incr-Pool" (From Job IncPool override)
+  Catalog:                "MyCatalog" (From Client resource)
+  Storage:                "Drive-9-LTO-3" (From Pool resource)
+  Scheduled time:         25-Jul-2023 06:15:01
+  Start time:             25-Jul-2023 06:19:28
+  End time:               25-Jul-2023 06:47:39
+  Elapsed time:           28 mins 11 secs
+  Priority:               10
+  FD Files Written:       9,301
+  SD Files Written:       9,301
+  FD Bytes Written:       19,756,119,768 (19.75 GB)
+  SD Bytes Written:       19,757,574,960 (19.75 GB)
+  Rate:                   11683.1 KB/s
+  Software Compression:   0.7% 1.0:1
+  Comm Line Compression:  None
+  Snapshot/VSS:           no
+  Extra text
+  Extra lines
+  more stuff
+  Encryption:             no
+  Accurate:               no
+  Volume name(s):         A02204
+  Volume Session Id:      51
+  Volume Session Time:    1686809726
+  Last Volume Bytes:      213,839,023,104 (213.8 GB)
+  Non-fatal FD errors:    0
+  SD Errors:              0
+  FD termination status:  OK
+  SD termination status:  OK
+  Termination:            Backup OK
+
+25-Jul 06:47 bacula-dir JobId 0001: Begin pruning Jobs older than 4 years .
+25-Jul 06:47 bacula-dir JobId 0002: No Jobs found to prune.
+25-Jul 06:47 bacula-dir JobId 0003: No Files found to prune.
+25-Jul 06:47 bacula-dir JobId 0004: End auto prune.

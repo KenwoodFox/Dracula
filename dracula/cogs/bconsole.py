@@ -50,33 +50,49 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
         return cleaned_stdout
 
+    async def sendSummary(self, jobName, files, bytes):
+        user = await self.bot.fetch_user(185206201011798016)
+        await user.send(
+            f"Your most recent backup job `{jobName}` is finished! Wrote `{files}` files and `{bytes}` bytes to tape!"
+        )
+
     @tasks.loop(seconds=20)
     async def check_messages(self):
         maxCharPerMessage = 1900
         raw = self.bconsoleCommand("messages")
 
-        lines = raw.split("\n")  # A list containing every line
+        # await self.sendSummary("Backup-Joe", "180", "4mb")
+
+        if False:
+            lines = raw.split("\n")  # A list containing every line
+        else:
+            with open("/app/templates/testData.txt") as f:
+                lines = [line.rstrip("\n") for line in f]
 
         # Dont report empty messages
         if "You have no messages." in lines[0]:
             return
 
         content = ""  # The content of a single message we're going to send
-        for line in lines:
+        for idx, line in enumerate(lines):
+            # Will adding this line take us over the limit?
             if len(content) + len(line) < maxCharPerMessage:
+                # Add this line
                 content += line + "\n"
-            else:
-                if "Please mount" in content:
-                    await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
-                else:
-                    await self.alertChan.send(f"```{content}```")
-                content = ""
 
-        if content != "":
+                # If this is not the last line
+                if idx != len(lines) - 1:
+                    continue
+
+            # Check this bit of context for some important data!
+            # if self.extract("Job:", line) is not None:
+            #     jobName = self.extract("Job:", line)
+
             if "Please mount" in content:
                 await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
             else:
                 await self.alertChan.send(f"```{content}```")
+            content = line + "\n"
 
     @app_commands.command(name="eject")
     @commands.has_role("SYSADMIN")

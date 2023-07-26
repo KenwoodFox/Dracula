@@ -1,0 +1,7 @@
+# Template config yaml!
+
+users:
+  example_user:
+    user-jobs:
+      - example-job
+    discord: 000000000000000000
