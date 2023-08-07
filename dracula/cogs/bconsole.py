@@ -5,10 +5,13 @@
 
 import discord
 import logging
+import re
 import os
 import time
 import subprocess
 import paramiko
+import yaml
+import shutil
 
 
 from typing import Literal, Optional
@@ -27,6 +30,15 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         chanid = int(os.environ.get("CHANNEL"))
         self.alertUser = int(os.environ.get("ALERT_USER"))
         self.alertChan = self.bot.get_channel(chanid)
+
+        # Setup user config
+        confPath = "/app/config/config.yaml"
+        if not os.path.isfile(confPath):
+            logging.warn("Config not found! Copying default")
+            shutil.copyfile("/app/templates/config.yaml", confPath)
+
+        with open(confPath, "r") as file:
+            self.yamlConf = yaml.safe_load(file)
 
         # Setup tasks
         self.check_messages.start()
@@ -50,33 +62,142 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
         return cleaned_stdout
 
+    def extract(self, data):
+        """
+        Extract targets from text!
+        """
+
+        myDict = {}
+
+        for line in data:
+            splitLines = line.split("   ")
+
+            thisLine = []
+            for nugget in splitLines:
+                if nugget != "":
+                    thisLine.append(nugget.lstrip())
+
+            if len(thisLine) >= 2:
+                myDict[thisLine[0]] = thisLine[1]
+
+        return myDict
+
+    async def sendSummary(self, data):
+        if data is None:
+            logging.error("Not sending summary because no data was sent.")
+            return
+
+        userData = self.yamlConf["users"]
+
+        for user in userData:
+            userId = None
+            jobNames = userData[user]["user-jobs"]
+
+            for jobName in jobNames:
+                if jobName in data["Job:"]:
+                    userId = userData[user]["discord"]
+
+            if userId == None:
+                logging.debug("Not sending summary because userid is not in dict.")
+                return
+
+            user = await self.bot.fetch_user(userId)
+            term = data["Termination:"]
+            bytesWritten = re.search(r"\((.*?)\)", data["SD Bytes Written:"]).group(1)
+
+            # Start by crafting an embed
+            if term == "Backup OK":
+                color = 0x76FF26
+            else:
+                color = 0x7A0C1F
+
+            embed = discord.Embed(
+                title=data["Job:"],
+                color=color,
+            )
+
+            embed.add_field(
+                name="Status",
+                value=term,
+                inline=False,
+            )
+
+            embed.add_field(
+                name="Files Backed Up",
+                value=data["SD Files Written:"],
+                inline=True,
+            )
+
+            embed.add_field(
+                name="Bytes Written",
+                value=bytesWritten,
+                inline=True,
+            )
+
+            embed.add_field(
+                name="Time Consumed",
+                value=data["Elapsed time:"],
+                inline=True,
+            )
+
+            embed.add_field(
+                name="Volumes",
+                value=data["Volume name(s):"],
+                inline=False,
+            )
+
+            embed.set_footer(text=f"Bot Version {self.bot.version}")
+
+            # Send the embed!
+            await user.send(embed=embed)
+
     @tasks.loop(seconds=20)
     async def check_messages(self):
         maxCharPerMessage = 1900
         raw = self.bconsoleCommand("messages")
 
-        lines = raw.split("\n")  # A list containing every line
+        # await self.sendSummary("Backup-Joe", "180", "4mb")
+
+        if True:
+            lines = raw.split("\n")  # A list containing every line
+        else:
+            with open("/app/templates/testData.txt") as f:
+                lines = [line.rstrip("\n") for line in f]
 
         # Dont report empty messages
         if "You have no messages." in lines[0]:
             return
 
-        content = ""  # The content of a single message we're going to send
-        for line in lines:
-            if len(content) + len(line) < maxCharPerMessage:
-                content += line + "\n"
-            else:
-                if "Please mount" in content:
-                    await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
-                else:
-                    await self.alertChan.send(f"```{content}```")
-                content = ""
+        # Collect/parse some report data
+        try:
+            data = self.extract(lines)
+        except:
+            data = None
 
-        if content != "":
+        content = ""  # The content of a single message we're going to send
+        for idx, line in enumerate(lines):
+            # Will adding this line take us over the limit?
+            if len(content) + len(line) < maxCharPerMessage:
+                # Add this line
+                content += line + "\n"
+
+                # If this is not the last line
+                if idx != len(lines) - 1:
+                    continue
+
             if "Please mount" in content:
                 await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
             else:
                 await self.alertChan.send(f"```{content}```")
+
+            if "Termination:" in content:
+                # its time to send an alert!
+                try:
+                    await self.sendSummary(data)
+                except:
+                    logging.error("Error sending data!")
+
+            content = line + "\n"
 
     @app_commands.command(name="eject")
     @commands.has_role("SYSADMIN")
