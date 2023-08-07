@@ -37,11 +37,21 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             logging.warn("Config not found! Copying default")
             shutil.copyfile("/app/templates/config.yaml", confPath)
 
+        # Static or at least, infrequently updated data
         with open(confPath, "r") as file:
             self.yamlConf = yaml.safe_load(file)
+        self.globalStats = []
 
         # Setup tasks
         self.check_messages.start()
+        self.get_global_stats.start()
+
+    def sizeof_fmt(self, num):
+        for unit in ("Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"):
+            if abs(num) < 1024.0:
+                return f"{num:3.1f} {unit}"
+            num /= 1024.0
+        return f"{num} Bytes"
 
     def bconsoleCommand(self, cmd: str):
         out = subprocess.Popen(
@@ -150,6 +160,90 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
             # Send the embed!
             await user.send(embed=embed)
+
+    @app_commands.command(name="mystatus")
+    async def mystatus(self, ctx: discord.Interaction):
+        """
+        Get your personal stats
+        """
+
+        # Get the config userdata
+        userData = self.yamlConf["users"]
+        numJobs = 0  # Number of jobs we found
+        backupUserBytesTotal = 0  # Backup bytes for this user
+        backupBytesTotal = 0  # Backup bytes overall
+
+        # Make new embed
+        embed = discord.Embed(
+            title=f"Backup Stats for {ctx.user.name}",
+            color=0x76FF26,
+        )
+
+        # Example Data
+        exampleLine = [
+            "",
+            "   46 ",
+            "     6,365 ",
+            " 60161962240   ",
+            " BackupDatabase     ",
+            "",
+        ]
+
+        # Process the lines
+        for line in self.globalStats:
+            line = line.split("|")  # Split on delim
+
+            # Try cracking the max line
+            try:
+                backupBytesTotal = int(line[3])
+            except:
+                pass
+
+            if not (len(line) < len(exampleLine)):  # if line is correct size
+                for user in userData:  # Check every user in userData
+                    # Get the list of this user's jobs
+                    jobNames = userData[user]["user-jobs"]
+
+                    # Check if this user is ours
+                    if userData[user]["discord"] == ctx.user.id:
+                        for jobName in jobNames:
+                            # Check if their jobname shows up in spot 4
+                            if jobName in line[4]:
+                                numJobs += 1  # We found stats to report on!
+
+                                thisJobBytes = int(line[3])
+                                backupUserBytesTotal += thisJobBytes
+
+                                # Add an embed field to the report
+                                embed.add_field(
+                                    name=jobName,
+                                    value=f"{self.sizeof_fmt(thisJobBytes)}",
+                                    inline=True,
+                                )
+
+        embed.add_field(
+            name="",
+            value=f"Your {numJobs} backup{'s' if numJobs > 1 else ''} consume{'s' if numJobs == 1 else ''} {self.sizeof_fmt(backupUserBytesTotal)}, {(backupUserBytesTotal/backupBytesTotal):.2%} of total backup data ({self.sizeof_fmt(backupBytesTotal)}).",
+            inline=False,
+        )
+
+        embed.set_footer(text=f"Bot Version {self.bot.version}")
+
+        # Send the embed!
+        if numJobs > 0:
+            await ctx.response.send_message(embed=embed)
+        else:
+            await ctx.response.send_message("No stats found for your user!")
+
+    @tasks.loop(seconds=900)
+    async def get_global_stats(self):
+        # Get global Stat data from bacula
+        logging.debug("Getting global stats.")
+        if True:
+            self.globalStats = self.bconsoleCommand("list jobtotals").split("\n")
+        else:
+            with open("/app/templates/testData.txt") as f:
+                self.globalStats = [line.rstrip("\n") for line in f]
 
     @tasks.loop(seconds=20)
     async def check_messages(self):
