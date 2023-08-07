@@ -183,7 +183,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
                 # If this is not the last line
                 if idx != len(lines) - 1:
-                    continue
+                    continue  # Skip to the next "for" iterator
 
             if "Please mount" in content:
                 await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
