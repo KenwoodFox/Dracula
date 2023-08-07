@@ -1,5 +1,5 @@
-# FOSNHU
-# 2022, Fops Bot
+# Bconsole Cog
+# 2023, Dracula Bot
 # MIT License
 
 
