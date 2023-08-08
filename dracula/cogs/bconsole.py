@@ -288,8 +288,8 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
                 # its time to send an alert!
                 try:
                     await self.sendSummary(data)
-                except:
-                    logging.error("Error sending data!")
+                except Exception as e:
+                    logging.error(f"Error sending data! Error was {e}")
 
             content = line + "\n"
 
