@@ -22,7 +22,11 @@ class ToolCog(commands.Cog, name="Tools"):
 
     @commands.Cog.listener()
     async def on_message(self, ctx: discord.message.Message):
-        if isinstance(ctx.channel, discord.channel.DMChannel) and not ctx.author.bot:
+        if (
+            isinstance(ctx.channel, discord.channel.DMChannel)
+            and not ctx.author.bot
+            and not ctx.author.id == self.alertUser
+        ):
             logging.info(
                 f"Got private message in {ctx.channel.id}, author was {ctx.author.name}, forwarding it!"
             )
@@ -31,6 +35,8 @@ class ToolCog(commands.Cog, name="Tools"):
             await user.send(
                 f"Private message from {ctx.author.name}\n```{ctx.content}```"
             )
+
+            await ctx.add_reaction("📧")
 
     @app_commands.command(name="version")
     async def version(self, ctx: discord.Interaction):
