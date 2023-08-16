@@ -3,6 +3,7 @@
 # MIT License
 
 
+import os
 import discord
 import logging
 
@@ -15,6 +16,21 @@ from discord.ext import commands
 class ToolCog(commands.Cog, name="Tools"):
     def __init__(self, bot):
         self.bot = bot
+
+        # Args
+        self.alertUser = int(os.environ.get("ALERT_USER"))
+
+    @commands.Cog.listener()
+    async def on_message(self, ctx: discord.message.Message):
+        if isinstance(ctx.channel, discord.channel.DMChannel) and not ctx.author.bot:
+            logging.info(
+                f"Got private message in {ctx.channel.id}, author was {ctx.author.name}, forwarding it!"
+            )
+
+            user = await self.bot.fetch_user(self.alertUser)
+            await user.send(
+                f"Private message from {ctx.author.name}\n```{ctx.content}```"
+            )
 
     @app_commands.command(name="version")
     async def version(self, ctx: discord.Interaction):
