@@ -41,6 +41,8 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         with open(confPath, "r") as file:
             self.yamlConf = yaml.safe_load(file)
         self.globalStats = []
+        self.lastContent = ""  # Used to prevent double posting
+        self.lastContentCt = 0
 
         # Setup tasks
         self.check_messages.start()
@@ -279,19 +281,36 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
                 if idx != len(lines) - 1:
                     continue  # Skip to the next "for" iterator
 
-            if "Please mount" in content:
-                await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
+            if self.lastContent != content:  # Check if we're double posting
+                if "Please mount" in content:
+                    await self.alertChan.send(f"<@{self.alertUser}>\n```{content}```")
+                else:
+                    await self.alertChan.send(f"```{content}```")
+
+                if "Termination:" in content:
+                    # its time to send an alert!
+                    try:
+                        await self.sendSummary(data)
+                    except Exception as e:
+                        logging.error(f"Error sending data! Error was {e}")
+
+                self.lastContent = content
+                self.lastContentCt = 0
+                content = line + "\n"
             else:
-                await self.alertChan.send(f"```{content}```")
+                self.lastContentCt += 1
 
-            if "Termination:" in content:
-                # its time to send an alert!
-                try:
-                    await self.sendSummary(data)
-                except Exception as e:
-                    logging.error(f"Error sending data! Error was {e}")
+                # What to do if we are double-posting
+                last_message = await self.alertChan.fetch_message(
+                    self.alertChan.last_message_id
+                )  # Get last message
 
-            content = line + "\n"
+                if last_message.author == self.bot.user and self.lastContentCt != 0:
+                    await last_message.delete()
+
+                await self.alertChan.send(
+                    f"```Message Repeated {self.lastContentCt} times.```"
+                )
 
     @app_commands.command(name="eject")
     @commands.has_role("SYSADMIN")
