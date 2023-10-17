@@ -108,7 +108,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             for jobName in jobNames:
                 if jobName in data["Job:"]:
                     userId = userData[user]["discord"]
-                    logging.info(f"Fond job {jobName} for user {userId}")
+                    logging.info(f"Found job {jobName} for user {userId}")
 
             if userId == None:
                 logging.debug("Not sending summary because userid is not in dict.")
