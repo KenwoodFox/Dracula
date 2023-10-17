@@ -108,12 +108,17 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             for jobName in jobNames:
                 if jobName in data["Job:"]:
                     userId = userData[user]["discord"]
+                    logging.info(f"Fond job {jobName} for user {userId}")
 
             if userId == None:
                 logging.debug("Not sending summary because userid is not in dict.")
                 return
 
             user = await self.bot.fetch_user(userId)
+            try:
+                logging.info(f"Fetched user {user.name} from id {userId}")
+            except:
+                logging.warn("Couldn't get valid username, line 120 in bconsole.py")
             term = data["Termination:"]
             bytesWritten = re.search(r"\((.*?)\)", data["SD Bytes Written:"]).group(1)
 
