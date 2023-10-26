@@ -94,6 +94,31 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
         return myDict
 
+    @app_commands.command(name="sendalert")
+    async def sendalert(self, ctx: discord.Interaction, alert_message: str):
+        """
+        Send an alert to all in dracula config.
+        """
+
+        userData = self.yamlConf["users"]
+        usersSent = 0
+        errors = 0
+
+        for user in userData:  # all users
+            userId = userData[user]["discord"]  # get id for this user
+            disUser = await self.bot.fetch_user(userId)  # Fetch the user
+            if disUser == None:
+                errors += 1  # Failure
+                continue
+            else:
+                usersSent += 1  # Success
+
+            await disUser.send(f"Alert from {ctx.user.name}\n ```{alert_message}```")
+
+        await ctx.response.send_message(
+            f"Sent message to {usersSent} users, {errors} errors."
+        )
+
     async def sendSummary(self, data):
         if data is None:
             logging.error("Not sending summary because no data was sent.")
