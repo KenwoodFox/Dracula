@@ -116,9 +116,7 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
                 else:
                     usersSent += 1  # Success
 
-                await disUser.send(
-                    f"Alert from {ctx.user.name}\n ```{alert_message}```"
-                )
+                await disUser.send(f"Alert from {ctx.user.name}\n{alert_message}")
             except Exception as e:
                 logging.error(f"Caught error {e}")
                 errors += 1
