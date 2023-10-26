@@ -104,20 +104,26 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         usersSent = 0
         errors = 0
 
+        await ctx.response.defer()
+
         for user in userData:  # all users
-            userId = userData[user]["discord"]  # get id for this user
-            disUser = await self.bot.fetch_user(userId)  # Fetch the user
-            if disUser == None:
-                errors += 1  # Failure
-                continue
-            else:
-                usersSent += 1  # Success
+            try:
+                userId = userData[user]["discord"]  # get id for this user
+                disUser = await self.bot.fetch_user(userId)  # Fetch the user
+                if disUser == None:
+                    errors += 1  # Failure
+                    continue
+                else:
+                    usersSent += 1  # Success
 
-            await disUser.send(f"Alert from {ctx.user.name}\n ```{alert_message}```")
+                await disUser.send(
+                    f"Alert from {ctx.user.name}\n ```{alert_message}```"
+                )
+            except Exception as e:
+                logging.error(f"Caught error {e}")
+                errors += 1
 
-        await ctx.response.send_message(
-            f"Sent message to {usersSent} users, {errors} errors."
-        )
+        await ctx.followup.send(f"Sent message to {usersSent} users, {errors} errors.")
 
     async def sendSummary(self, data):
         if data is None:
