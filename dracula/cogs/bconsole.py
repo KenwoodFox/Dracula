@@ -197,8 +197,71 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
             # Send the embed!
             await user.send(embed=embed)
 
-    @app_commands.command(name="mystatus")
-    async def mystatus(self, ctx: discord.Interaction):
+    @app_commands.command(name="leaderboards")
+    async def leaderboards(self, ctx: discord.Interaction):
+        """
+        Show how you stack up compared to everyone else
+        """
+
+        # Get the config userdata
+        userData = self.yamlConf["users"]
+        statList = {}  # We'll store all the users here
+
+        # Example Data
+        exampleLine = [
+            "",
+            "   46 ",
+            "     6,365 ",
+            " 60161962240   ",
+            " BackupDatabase     ",
+            "",
+        ]
+
+        # Process the lines
+        for line in self.globalStats:
+            line = line.split("|")  # Split on delim
+
+            # Try cracking the max line
+            try:
+                backupBytesTotal = int(line[3])
+            except:
+                pass
+
+            if not (len(line) < len(exampleLine)):  # if line is correct size
+                for user in userData:  # Check every user in userData
+                    # Get the list of this user's jobs
+                    jobNames = userData[user]["user-jobs"]
+
+                    logging.info(f"Checking user {user} with jobs {jobNames}")
+
+                    for jobName in jobNames:
+                        # Check if their jobname shows up in spot 4
+                        if jobName in line[4]:
+                            logging.info(f"Found {jobName} for user {user}")
+                            # Check if they're already in the list
+                            if user in statList:
+                                statList[user] = statList[user] + int(line[3])
+                                logging.debug(f"added {user} with job size {line[3]}")
+                            else:
+                                statList[user] = int(line[3])
+                                logging.debug(
+                                    f"new user {user} with job size {line[3]}"
+                                )
+
+        # Format the output
+        msg = "```md\n# Leaderboards"
+
+        # Sort by filesize
+        sortedData = dict(sorted(statList.items(), key=lambda item: item[1]))
+
+        for i, user in enumerate(sortedData):
+            msg += f"\n{user: <16}{self.sizeof_fmt(sortedData[user])}"
+
+        msg += "\n```"
+        await ctx.response.send_message(msg)
+
+    @app_commands.command(name="mystats")
+    async def mystats(self, ctx: discord.Interaction):
         """
         Get your personal stats
         """
