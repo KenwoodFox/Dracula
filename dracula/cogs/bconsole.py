@@ -27,9 +27,9 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
         subprocess.run("cd templates && ./inject.sh", shell=True)
 
         # Setup "static" channels
-        chanid = int(os.environ.get("CHANNEL"))
+        self._alert_channel_id = int(os.environ.get("CHANNEL"))
         self.alertUser = int(os.environ.get("ALERT_USER"))
-        self.alertChan = self.bot.get_channel(chanid)
+        self.alertChan = self.bot.get_channel(self._alert_channel_id)
 
         # Setup user config
         confPath = "/app/config/config.yaml"
@@ -336,16 +336,34 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
 
     @tasks.loop(seconds=900)
     async def get_global_stats(self):
-        # Get global Stat data from bacula
-        logging.debug("Getting global stats.")
-        if True:
-            self.globalStats = self.bconsoleCommand("list jobtotals").split("\n")
-        else:
-            with open("/app/templates/testData.txt") as f:
-                self.globalStats = [line.rstrip("\n") for line in f]
+        try:
+            # Get global Stat data from bacula
+            logging.debug("Getting global stats.")
+            if True:
+                self.globalStats = self.bconsoleCommand("list jobtotals").split("\n")
+            else:
+                with open("/app/templates/testData.txt") as f:
+                    self.globalStats = [line.rstrip("\n") for line in f]
+        except Exception:
+            logging.exception("get_global_stats failed")
 
     @tasks.loop(seconds=20)
     async def check_messages(self):
+        try:
+            await self._check_messages_once()
+        except Exception:
+            logging.exception("check_messages failed")
+
+    async def _check_messages_once(self):
+        if self.alertChan is None:
+            self.alertChan = self.bot.get_channel(self._alert_channel_id)
+        if self.alertChan is None:
+            logging.warning(
+                "check_messages: alert channel id %s not in cache; skipping tick",
+                self._alert_channel_id,
+            )
+            return
+
         maxCharPerMessage = 1900
         raw = self.bconsoleCommand("messages")
 
@@ -358,13 +376,13 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
                 lines = [line.rstrip("\n") for line in f]
 
         # Dont report empty messages
-        if "You have no messages." in lines[0]:
+        if lines and "You have no messages." in lines[0]:
             return
 
         # Collect/parse some report data
         try:
             data = self.extract(lines)
-        except:
+        except Exception:
             data = None
 
         content = ""  # The content of a single message we're going to send
@@ -398,12 +416,21 @@ class bconsoleCog(commands.Cog, name="Bconsole"):
                 self.lastContentCt += 1
 
                 # What to do if we are double-posting
-                last_message = await self.alertChan.fetch_message(
-                    self.alertChan.last_message_id
-                )  # Get last message
-
-                if last_message.author == self.bot.user and self.lastContentCt != 0:
-                    await last_message.delete()
+                last_mid = self.alertChan.last_message_id
+                if last_mid is not None:
+                    try:
+                        last_message = await self.alertChan.fetch_message(last_mid)
+                        if (
+                            last_message.author == self.bot.user
+                            and self.lastContentCt != 0
+                        ):
+                            await last_message.delete()
+                    except discord.HTTPException as e:
+                        logging.warning(
+                            "check_messages: fetch/delete last message (%s): %s",
+                            last_mid,
+                            e,
+                        )
 
                 await self.alertChan.send(
                     f"```Message Repeated {self.lastContentCt} times.```"
